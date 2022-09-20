@@ -10,7 +10,7 @@ enum ErrorType{
     Success,
 }
 
-fn colorfull_err(context: &str, message: &str, error_type: ErrorType){
+fn colorful_err(context: &str, message: &str, error_type: ErrorType){
     match error_type{
         ErrorType::Error => {
             println!("{}: {}\n\t{}", "Error".bold().red(), context, message);
@@ -27,26 +27,26 @@ fn colorfull_err(context: &str, message: &str, error_type: ErrorType){
 
 fn check_var(var: &str, index: usize) -> bool{
     if var.len() == 0{
-        colorfull_err("setting env variables, skipping", "empty line", ErrorType::Warning);
+        colorful_err("setting env variables, skipping", "empty line", ErrorType::Warning);
         return false;
     }
     if !var.contains("=") {
-        colorfull_err(&format!("setting env variables, skipping ({})", index), "missing =", ErrorType::Warning);
+        colorful_err(&format!("setting env variables, skipping ({})", index), "missing =", ErrorType::Warning);
         return false;
     }
     if var.matches("=").count() != 1 {
-        colorfull_err(&format!("setting env variables, skipping ({})", index), "mutliple =", ErrorType::Warning);
+        colorful_err(&format!("setting env variables, skipping ({})", index), "mutliple =", ErrorType::Warning);
         return false;
     }
 
     let mut iter = var.split("=");
     let name = iter.nth(0).unwrap();
     if name.chars().filter(|&c| c.is_digit(10) || c.is_alphabetic() || c == '_').count() != name.chars().count(){
-        colorfull_err(&format!("setting env variables, skipping ({})", index), "var name can only consist of letter, number, and _", ErrorType::Warning);
+        colorful_err(&format!("setting env variables, skipping ({})", index), "var name can only consist of letters, numbers, and _", ErrorType::Warning);
         return false;
     }
     if name.chars().filter(|&c| c.is_uppercase()).count() != name.chars().count(){
-        colorfull_err(&format!("setting env variables ({})", index), "var name is not uppercase", ErrorType::Warning);
+        colorful_err(&format!("setting env variables ({})", index), "var name is not uppercase", ErrorType::Warning);
     }
 
     true
@@ -57,7 +57,7 @@ fn main() {
 
     // check if at least one arg has been provided
     if args.len() < 2{
-        colorfull_err("parsing arguments", "Not enough arguments provided", ErrorType::Error);
+        colorful_err("parsing arguments", "not enough arguments provided", ErrorType::Error);
     }
 
     let mut process_index = 0;
@@ -67,13 +67,13 @@ fn main() {
         let current_dir = env::current_dir();
         if current_dir.is_err(){
             // invalid working directory
-            colorfull_err("getting current working directory", &current_dir.as_ref().err().unwrap().to_string(), ErrorType::Error);
+            colorful_err("getting current working directory", &current_dir.as_ref().err().unwrap().to_string(), ErrorType::Error);
         }
         let path = current_dir.unwrap();
         let path = path.to_str().unwrap();
         let contents = fs::read_to_string(format!("{}/.env", path));
         if contents.is_err(){
-            colorfull_err("reading .env file in the current working directory", &contents.as_ref().err().unwrap().to_string(), ErrorType::Error);
+            colorful_err("reading .env file in the current working directory", &contents.as_ref().err().unwrap().to_string(), ErrorType::Error);
         }
         env_content = contents.unwrap();
         process_index = 1;
@@ -81,13 +81,13 @@ fn main() {
     }else if args.len() > 3 && (args[1] == "-f" || args[1] == "--file"){
         let contents = fs::read_to_string(&args[2]);
         if contents.is_err(){
-            colorfull_err(&format!("reading file \"{}\"", args[2]), &contents.as_ref().err().unwrap().to_string(), ErrorType::Error);
+            colorful_err(&format!("reading file \"{}\"", args[2]), &contents.as_ref().err().unwrap().to_string(), ErrorType::Error);
         }
         env_content = contents.unwrap();
         process_index = 3;
 
     }else{
-        colorfull_err("parsing arguments", "not enough arguments", ErrorType::Error);
+        colorful_err("parsing arguments", "not enough arguments", ErrorType::Error);
     }
 
     println!("{}", "--------------------------------------".blue());
@@ -108,10 +108,37 @@ fn main() {
         process.arg(arg);
     }
 
-    colorfull_err("", &format!("starting process with {} vars", acc), ErrorType::Success);
+    colorful_err("", &format!("starting process with {} vars", acc), ErrorType::Success);
     println!("{}", "--------------------------------------".blue());
     let res = process.status();
-    if res.is_err(){
-        colorfull_err("starting the process", &res.as_ref().err().unwrap().to_string(), ErrorType::Error);
+
+    // no need to capture exit code of the process
+    //if res.is_err(){
+    //    colorfull_err("starting the process", &res.as_ref().err().unwrap().to_string(), ErrorType::Error);
+    //}
+}
+
+#[cfg(test)]
+mod test{
+    use crate::check_var;
+    #[test]
+    fn empty_line(){
+        assert_eq!(false, check_var("", 1));
+        assert_eq!(true, check_var("VAR=var", 1));
+    }
+    #[test]
+    fn missing_equals(){
+        assert_eq!(false, check_var("var", 1));
+    }
+    #[test]
+    fn multiple_equals(){
+        assert_eq!(false, check_var("var=var=", 1));
+    }
+    #[test]
+    fn invalid_char(){
+        assert_eq!(false, check_var("VAR!=var", 1));
+        assert_eq!(true, check_var("VAR1=var", 1));
+        assert_eq!(true, check_var("VAR1_=var", 1));
+        assert_eq!(false, check_var("VAR1_!=var", 1));
     }
 }
