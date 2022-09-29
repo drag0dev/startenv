@@ -11,7 +11,7 @@ once build finishes executable can be found at ./target/release/startenv
 you can use startenv two different ways:  
 1. without any flags in which case it will try to open .env file in the current directory
 ```
-startenv my-app
+startenv my-app [...]
 ```
 2.  with flag -f (--file) where you specify path to the env var file (it does not have to be named .env)
 ```
