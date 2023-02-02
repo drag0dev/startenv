@@ -3,6 +3,9 @@ use std::process::exit;
 use std::fs;
 use colored::Colorize;
 use std::process::Command;
+use std::io::{stdin, stdout};
+use std::io::prelude::*;
+use std::process;
 
 enum ErrorType{
     Error,
@@ -93,9 +96,12 @@ fn main() {
     println!("{}", "--------------------------------------".blue());
     let mut process = Command::new(&args[process_index]);
     let mut acc = 0;
+
     // attach all env vars
+    let mut careful = true;
     for (i, line) in env_content.lines().enumerate(){
         if !check_var(&line, i+1){
+            careful = false;
             continue;
         }
         let name = line.split("=").nth(0).unwrap();
@@ -108,9 +114,40 @@ fn main() {
         process.arg(arg);
     }
 
-    colorful_err("", &format!("starting process with {} vars", acc), ErrorType::Success);
-    println!("{}", "--------------------------------------".blue());
-    let res = process.status();
+    let mut proceed = true;
+    if !careful {
+        let mut input_str: String = String::new();
+        let input = stdin();
+        let mut output = stdout();
+        let mut res;
+        println!("\n{}", "Not all vars were formatted correctly".red().bold());
+        loop {
+            print!("{}: ", "Do you want to proceed (y/n)".yellow());
+            res = output.flush();
+            if res.is_err() {
+                colorful_err("flushing input message to stdout", &format!("{}", res.err().unwrap()), ErrorType::Error);
+            }
+            input_str.clear();
+            if input.read_line(&mut input_str).is_err() { continue; }
+            input_str = input_str.to_uppercase();
+            if input_str.len() != 0 {
+                let response = input_str.chars().nth(0).unwrap();
+                if response == 'Y' { break; }
+                else if response == 'N' {
+                    proceed = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    if proceed {
+        colorful_err("", &format!("starting process with {} vars", acc), ErrorType::Success);
+        println!("{}", "--------------------------------------".blue());
+        _ = process.status();
+    }else {
+        println!("Not proceeding, exiting...");
+    }
 
     // no need to capture exit code of the process
     //if res.is_err(){
