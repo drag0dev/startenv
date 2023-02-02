@@ -2,12 +2,12 @@
 startenv is a small script that starts a process with env vars that are in a file
 ## Why
 Instead of using a dev dependency to plug env vars at runtime or write all env vars in terminal when starting the process, which can be quite messy, just preface whatever process you are running with ```startenv``` and it will automatically pull all env vars from a file.
-## Build
+## Install
 ```
-cargo build --release
+cargo install --path ./
 ````  
-once build finishes executable can be found at ./target/release/startenv
 ## Usage
+in case there are poorly formatted vars user is prompted whether to continue  
 you can use startenv two different ways:  
 1. without any flags in which case it will try to open .env file in the current directory
 ```
