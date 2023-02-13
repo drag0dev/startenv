@@ -20,4 +20,4 @@ startenv --file env/example.env my-app [...]
 ```
 
 ## Parsing vars
-Each var should be in a new line, with format NAME=value. Name should only consists of letters, numbers and _. In case this format is not followed the var will be skipped and it will be logged. If you have spaces in the value quotes should not be wrapped around it unless you really need them.
+Each var should be in a new line, with format NAME=value. Name should only consists of letters, numbers and _. Both line and inline comments are supported.
